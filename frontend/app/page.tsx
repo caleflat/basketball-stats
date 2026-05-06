@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { PlayerSearch } from "@/components/PlayerSearch";
@@ -32,7 +32,7 @@ interface PlayerData {
   awards: PlayerAward[];
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const season = searchParams.get("season") ?? "2025-26";
 
@@ -168,3 +168,10 @@ export default function Home() {
   );
 }
 
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
+  );
+}

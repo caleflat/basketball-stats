@@ -65,17 +65,17 @@ function groupAwards(awards: PlayerAward[]): { label: string; count: number }[] 
     });
 }
 
+function awardColor(label: string): string {
+  if (label.includes("Most Valuable Player")) return "bg-amber-100 text-amber-800";
+  if (label.includes("Defensive Player of the Year") || label.includes("Rookie of the Year"))
+    return "bg-blue-100 text-blue-700";
+  return "bg-gray-100 text-gray-600";
+}
+
 function AwardBadge({ label, count }: { label: string; count: number }) {
   const short = AWARD_LABELS[label] ?? label;
-  const isMajor = ["MVP", "Finals MVP", "DPOY", "ROY"].includes(short);
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${
-        isMajor
-          ? "bg-amber-100 text-amber-800"
-          : "bg-gray-100 text-gray-600"
-      }`}
-    >
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${awardColor(label)}`}>
       {count > 1 && <span className="opacity-60">{count}×</span>}
       {short}
     </span>
