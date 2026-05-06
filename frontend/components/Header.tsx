@@ -10,6 +10,7 @@ interface Props {
   children?: React.ReactNode;
 }
 
+// For the season dropdown
 function ChevronDown() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="pointer-events-none">
@@ -85,21 +86,23 @@ export function Header({ onSeasonChange, children }: Props) {
       {/* Page-specific slot (e.g. search bar) */}
       {children && <div className="flex items-center flex-1">{children}</div>}
 
-      {/* Season type toggle */}
+      {/* Season type toggle — player page only */}
       <div className="ml-auto flex items-center gap-3">
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          {[{ key: "regular", label: "Regular Season" }, { key: "playoffs", label: "Playoffs" }].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => handleSeasonTypeChange(key)}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                seasonType === key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {pathname === "/" && (
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            {[{ key: "regular", label: "Regular Season" }, { key: "playoffs", label: "Playoffs" }].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => handleSeasonTypeChange(key)}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  seasonType === key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
       {/* Season selector */}
       <div className="flex items-center">
