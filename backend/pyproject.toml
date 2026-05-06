@@ -1,0 +1,14 @@
+[project]
+name = "nba-savant-backend"
+version = "0.1.0"
+description = "NBA Savant API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "diskcache>=5.6.3",
+    "fastapi>=0.136.1",
+    "nba-api>=1.11.4",
+    "pydantic>=2.13.3",
+    "ruff>=0.15.12",
+    "uvicorn[standard]>=0.46.0",
+]
