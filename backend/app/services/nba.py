@@ -6,6 +6,7 @@ from nba_api.stats.endpoints import (
     playergamelog,
     playerawards,
     leaguedashplayerstats,
+    leaguedashlineups,
     commonplayerinfo,
 )
 from app.cache import cached
@@ -20,6 +21,7 @@ from app.models.player import (
     PlayerAward,
     PercentileStat,
     PlayerPercentiles,
+    LineupEntry,
 )
 
 
@@ -408,6 +410,67 @@ def get_game_log(player_id: int, season: str) -> list[GameLogEntry]:
             fta=fta,
             ft_pct=round(float(row["FT_PCT"]) * 100, 1) if fta > 0 else 0.0,
             plus_minus=int(row["PLUS_MINUS"]),
+        ))
+    return result
+
+
+_LINEUP_SORT: dict[str, tuple[str, bool]] = {
+    "net_rating": ("NET_RATING", False),
+    "off_rating": ("OFF_RATING", False),
+    "def_rating": ("DEF_RATING", True),
+    "pts":        ("PTS",        False),
+    "reb":        ("REB",        False),
+    "ast":        ("AST",        False),
+    "ts_pct":     ("TS_PCT",     False),
+    "pace":       ("PACE",       False),
+}
+
+_LINEUP_MIN_GP = {2: 50, 3: 30, 4: 20, 5: 15}
+
+
+@cached()
+def _fetch_lineups(season: str, group_quantity: int):
+    """Fetch and merge base + advanced lineup data. Cached per season + size."""
+    kwargs = dict(
+        season=season,
+        group_quantity=group_quantity,
+        per_mode_detailed="PerGame",
+        season_type_all_star="Regular Season",
+    )
+    base = leaguedashlineups.LeagueDashLineups(**kwargs, measure_type_detailed_defense="Base").get_data_frames()[0]
+    adv = leaguedashlineups.LeagueDashLineups(**kwargs, measure_type_detailed_defense="Advanced").get_data_frames()[0]
+    merged = base.merge(
+        adv[["GROUP_ID", "OFF_RATING", "DEF_RATING", "NET_RATING", "PACE", "TS_PCT"]],
+        on="GROUP_ID", how="left",
+    )
+    return merged[merged["GP"] >= _LINEUP_MIN_GP.get(group_quantity, 15)].reset_index(drop=True)
+
+
+def get_lineups(season: str, group_quantity: int, sort_by: str, limit: int) -> list[LineupEntry]:
+    df = _fetch_lineups(season, group_quantity).copy()
+    col, ascending = _LINEUP_SORT.get(sort_by, ("NET_RATING", False))
+    df = df.sort_values(col, ascending=ascending).head(limit).reset_index(drop=True)
+    result = []
+    for _, row in df.iterrows():
+        fga = float(row["FGA"]) or 1
+        fg3a = float(row["FG3A"]) or 1
+        result.append(LineupEntry(
+            group_id=str(row["GROUP_ID"]),
+            group_name=str(row["GROUP_NAME"]),
+            team=str(row["TEAM_ABBREVIATION"]),
+            gp=int(row["GP"]),
+            min=round(float(row["MIN"]), 1),
+            pts=round(float(row["PTS"]), 1),
+            reb=round(float(row["REB"]), 1),
+            ast=round(float(row["AST"]), 1),
+            tov=round(float(row["TOV"]), 1),
+            fg_pct=round(float(row["FG_PCT"]) * 100, 1),
+            fg3_pct=round(float(row["FG3_PCT"]) * 100, 1),
+            off_rating=round(float(row["OFF_RATING"]), 1),
+            def_rating=round(float(row["DEF_RATING"]), 1),
+            net_rating=round(float(row["NET_RATING"]), 1),
+            pace=round(float(row["PACE"]), 1),
+            ts_pct=round(float(row["TS_PCT"]) * 100, 1),
         ))
     return result
 

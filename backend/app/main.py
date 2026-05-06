@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import players, shots, stats, bio, percentiles, career, leaders, zones, gamelog, awards
+from app.routers import players, shots, stats, bio, percentiles, career, leaders, zones, gamelog, awards, lineups
 
 app = FastAPI(title="NBA Savant API", version="0.1.0")
 
@@ -26,6 +26,7 @@ app.include_router(leaders.router)
 app.include_router(zones.router)
 app.include_router(gamelog.router)
 app.include_router(awards.router)
+app.include_router(lineups.router)
 
 
 @app.get("/health")

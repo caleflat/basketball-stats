@@ -120,6 +120,25 @@ export interface GameLogEntry {
   plus_minus: number;
 }
 
+export interface LineupEntry {
+  group_id: string;
+  group_name: string;
+  team: string;
+  gp: number;
+  min: number;
+  pts: number;
+  reb: number;
+  ast: number;
+  tov: number;
+  fg_pct: number;
+  fg3_pct: number;
+  off_rating: number;
+  def_rating: number;
+  net_rating: number;
+  pace: number;
+  ts_pct: number;
+}
+
 export interface ShotChartEntry {
   game_id: string;
   game_date: string;
@@ -170,4 +189,7 @@ export const api = {
 
   getPlayerAwards: (playerId: number) =>
     get<PlayerAward[]>(`/players/${playerId}/awards`),
+
+  getLineups: (groupQuantity: number, season: string, sortBy = "net_rating", limit = 25) =>
+    get<LineupEntry[]>(`/lineups?group_quantity=${groupQuantity}&season=${season}&sort_by=${sortBy}&limit=${limit}`),
 };

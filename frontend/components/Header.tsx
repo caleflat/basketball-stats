@@ -55,6 +55,7 @@ export function Header({ onSeasonChange, children }: Props) {
         {[
           { href: "/", label: "Player" },
           { href: "/leaders", label: "Leaders" },
+          { href: "/lineups", label: "Lineups" },
         ].map(({ href, label }) => {
           const active = pathname === href;
           return (

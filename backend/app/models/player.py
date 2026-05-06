@@ -133,3 +133,22 @@ class PercentileStat(BaseModel):
 class PlayerPercentiles(BaseModel):
     season: str
     groups: dict[str, list[PercentileStat]]
+
+
+class LineupEntry(BaseModel):
+    group_id: str
+    group_name: str
+    team: str
+    gp: int
+    min: float
+    pts: float
+    reb: float
+    ast: float
+    tov: float
+    fg_pct: float
+    fg3_pct: float
+    off_rating: float
+    def_rating: float
+    net_rating: float
+    pace: float
+    ts_pct: float
