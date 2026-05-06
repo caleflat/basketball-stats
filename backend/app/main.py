@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -5,9 +7,13 @@ from app.routers import players, shots, stats, bio, percentiles, career, leaders
 
 app = FastAPI(title="NBA Savant API", version="0.1.0")
 
+_origins = ["http://localhost:3000"]
+if origin := os.getenv("FRONTEND_ORIGIN"):
+    _origins.append(origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
