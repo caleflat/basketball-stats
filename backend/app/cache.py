@@ -7,6 +7,10 @@ from typing import Callable, TypeVar
 import diskcache
 
 _CACHE_DIR = Path(__file__).parent.parent / ".cache"
+try:
+    _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    _CACHE_DIR = Path("/tmp/.nba-savant-cache")
 _cache = diskcache.Cache(_CACHE_DIR)
 
 # 24 hours — shot data for past games never changes
