@@ -1,8 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Header } from "@/components/Header";
@@ -149,7 +147,7 @@ const GROUPS = [
   { label: "Advanced", keys: ["off_rating","def_rating","net_rating","ts_pct","usg_pct","pie","ast_pct"] },
 ];
 
-function LeadersContent() {
+export default function LeadersPage() {
   const searchParams = useSearchParams();
   const season = searchParams.get("season") ?? "2025-26";
 
@@ -262,10 +260,3 @@ function LeadersContent() {
   );
 }
 
-export default function LeadersPage() {
-  return (
-    <Suspense>
-      <LeadersContent />
-    </Suspense>
-  );
-}

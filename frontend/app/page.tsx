@@ -1,8 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { PlayerSearch } from "@/components/PlayerSearch";
@@ -34,7 +32,7 @@ interface PlayerData {
   awards: PlayerAward[];
 }
 
-function HomeContent() {
+export default function Home() {
   const searchParams = useSearchParams();
   const season = searchParams.get("season") ?? "2025-26";
 
@@ -170,10 +168,3 @@ function HomeContent() {
   );
 }
 
-export default function Home() {
-  return (
-    <Suspense>
-      <HomeContent />
-    </Suspense>
-  );
-}
