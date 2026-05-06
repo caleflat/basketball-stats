@@ -132,6 +132,7 @@ export interface LineupEntry {
   tov: number;
   fg_pct: number;
   fg3_pct: number;
+  plus_minus: number;
   off_rating: number;
   def_rating: number;
   net_rating: number;
@@ -192,4 +193,7 @@ export const api = {
 
   getLineups: (groupQuantity: number, season: string, sortBy = "net_rating", limit = 25) =>
     get<LineupEntry[]>(`/lineups?group_quantity=${groupQuantity}&season=${season}&sort_by=${sortBy}&limit=${limit}`),
+
+  lookupLineup: (playerIds: number[], season: string) =>
+    get<LineupEntry | null>(`/lineups/lookup?player_ids=${playerIds.join(",")}&season=${season}`),
 };

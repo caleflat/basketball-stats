@@ -97,8 +97,8 @@ def _row_to_season_stats(r) -> PlayerSeasonStats:
 
 
 @cached()
-def get_career_stats(player_id: int) -> list[PlayerSeasonStats]:
-    response = playercareerstats.PlayerCareerStats(player_id=player_id)
+def get_career_stats(player_id: int, season_type: str = "Regular Season") -> list[PlayerSeasonStats]:
+    response = playercareerstats.PlayerCareerStats(player_id=player_id, season_type_all_star=season_type)
     df = response.get_data_frames()[0]
     # Drop duplicate seasons (traded players have multiple rows per season; keep highest GP)
     df = df.sort_values("GP", ascending=False).drop_duplicates("SEASON_ID").sort_values("SEASON_ID", ascending=False)
@@ -112,26 +112,27 @@ def get_player_stats(player_id: int, season: str) -> PlayerSeasonStats | None:
     return match[0] if match else None
 
 
+SEASON_TYPES = {"regular": "Regular Season", "playoffs": "Playoffs"}
+
+
 @cached()
-def _league_per_game(season: str):
-    """Per-game base stats for qualified players (GP >= 15). Cached per season."""
+def _league_per_game(season: str, season_type: str = "Regular Season"):
     response = leaguedashplayerstats.LeagueDashPlayerStats(
         season=season,
         per_mode_detailed="PerGame",
-        season_type_all_star="Regular Season",
+        season_type_all_star=season_type,
     )
     df = response.get_data_frames()[0]
     return df[df["GP"] >= 15].reset_index(drop=True)
 
 
 @cached()
-def _league_advanced(season: str):
-    """Advanced stats for qualified players (GP >= 15). Cached per season."""
+def _league_advanced(season: str, season_type: str = "Regular Season"):
     response = leaguedashplayerstats.LeagueDashPlayerStats(
         season=season,
         per_mode_detailed="PerGame",
         measure_type_detailed_defense="Advanced",
-        season_type_all_star="Regular Season",
+        season_type_all_star=season_type,
     )
     df = response.get_data_frames()[0]
     return df[df["GP"] >= 15].reset_index(drop=True)
@@ -205,15 +206,15 @@ def _build_advanced_leader(rank: int, row) -> StatLeader:
 
 
 @cached()
-def get_stat_leaders(season: str, stat: str, limit: int) -> list[StatLeader]:
+def get_stat_leaders(season: str, stat: str, limit: int, season_type: str = "Regular Season") -> list[StatLeader]:
     if stat in ADVANCED_STAT_COLS:
         col, ascending = ADVANCED_STAT_COLS[stat]
-        df = _league_advanced(season).copy()
+        df = _league_advanced(season, season_type).copy()
         df = df.sort_values(col, ascending=ascending).head(limit).reset_index(drop=True)
         return [_build_advanced_leader(int(i) + 1, row) for i, row in df.iterrows()]
 
     col, ascending = STAT_COLS[stat]
-    df = _league_per_game(season).copy()
+    df = _league_per_game(season, season_type).copy()
     df[["FG_PCT", "FG3_PCT", "FT_PCT"]] = df[["FG_PCT", "FG3_PCT", "FT_PCT"]].fillna(0)
     if col in _PCT_MINIMUMS:
         att_col = {"FG_PCT": "FGA", "FG3_PCT": "FG3A", "FT_PCT": "FTA"}[col]
@@ -228,9 +229,9 @@ def _pct_of_score(arr: np.ndarray, value: float) -> int:
 
 
 @cached()
-def get_player_percentiles(player_id: int, season: str) -> PlayerPercentiles | None:
-    base_df = _league_per_game(season)
-    adv_df = _league_advanced(season)
+def get_player_percentiles(player_id: int, season: str, season_type: str = "Regular Season") -> PlayerPercentiles | None:
+    base_df = _league_per_game(season, season_type)
+    adv_df = _league_advanced(season, season_type)
 
     base_row = base_df[base_df["PLAYER_ID"] == player_id]
     if base_row.empty:
@@ -377,11 +378,11 @@ def _parse_min(val) -> float:
 
 
 @cached()
-def get_game_log(player_id: int, season: str) -> list[GameLogEntry]:
+def get_game_log(player_id: int, season: str, season_type: str = "Regular Season") -> list[GameLogEntry]:
     response = playergamelog.PlayerGameLog(
         player_id=player_id,
         season=season,
-        season_type_all_star="Regular Season",
+        season_type_all_star=season_type,
     )
     df = response.get_data_frames()[0]
     result = []
@@ -415,64 +416,81 @@ def get_game_log(player_id: int, season: str) -> list[GameLogEntry]:
 
 
 _LINEUP_SORT: dict[str, tuple[str, bool]] = {
-    "net_rating": ("NET_RATING", False),
-    "off_rating": ("OFF_RATING", False),
-    "def_rating": ("DEF_RATING", True),
-    "pts":        ("PTS",        False),
-    "reb":        ("REB",        False),
-    "ast":        ("AST",        False),
-    "ts_pct":     ("TS_PCT",     False),
-    "pace":       ("PACE",       False),
+    "net_rating":  ("NET_RATING",  False),
+    "off_rating":  ("OFF_RATING",  False),
+    "def_rating":  ("DEF_RATING",  True),
+    "pts":         ("PTS",         False),
+    "reb":         ("REB",         False),
+    "ast":         ("AST",         False),
+    "ts_pct":      ("TS_PCT",      False),
+    "pace":        ("PACE",        False),
+    "plus_minus":  ("PLUS_MINUS",  False),
 }
 
 _LINEUP_MIN_GP = {2: 50, 3: 30, 4: 20, 5: 15}
 
 
 @cached()
-def _fetch_lineups(season: str, group_quantity: int):
-    """Fetch and merge base + advanced lineup data. Cached per season + size."""
+def _fetch_lineups_raw(season: str, group_quantity: int, season_type: str = "Regular Season"):
     kwargs = dict(
         season=season,
         group_quantity=group_quantity,
         per_mode_detailed="PerGame",
-        season_type_all_star="Regular Season",
+        season_type_all_star=season_type,
     )
     base = leaguedashlineups.LeagueDashLineups(**kwargs, measure_type_detailed_defense="Base").get_data_frames()[0]
     adv = leaguedashlineups.LeagueDashLineups(**kwargs, measure_type_detailed_defense="Advanced").get_data_frames()[0]
-    merged = base.merge(
+    return base.merge(
         adv[["GROUP_ID", "OFF_RATING", "DEF_RATING", "NET_RATING", "PACE", "TS_PCT"]],
         on="GROUP_ID", how="left",
     )
-    return merged[merged["GP"] >= _LINEUP_MIN_GP.get(group_quantity, 15)].reset_index(drop=True)
+
+
+@cached()
+def _fetch_lineups(season: str, group_quantity: int, season_type: str = "Regular Season"):
+    df = _fetch_lineups_raw(season, group_quantity, season_type)
+    return df[df["GP"] >= _LINEUP_MIN_GP.get(group_quantity, 15)].reset_index(drop=True)
+
+
+def _row_to_lineup_entry(row) -> LineupEntry:
+    return LineupEntry(
+        group_id=str(row["GROUP_ID"]),
+        group_name=str(row["GROUP_NAME"]),
+        team=str(row["TEAM_ABBREVIATION"]),
+        gp=int(row["GP"]),
+        min=round(float(row["MIN"]), 1),
+        pts=round(float(row["PTS"]), 1),
+        reb=round(float(row["REB"]), 1),
+        ast=round(float(row["AST"]), 1),
+        tov=round(float(row["TOV"]), 1),
+        fg_pct=round(float(row["FG_PCT"]) * 100, 1),
+        fg3_pct=round(float(row["FG3_PCT"]) * 100, 1),
+        plus_minus=round(float(row.get("PLUS_MINUS") or 0), 1),
+        off_rating=round(float(row.get("OFF_RATING") or 0), 1),
+        def_rating=round(float(row.get("DEF_RATING") or 0), 1),
+        net_rating=round(float(row.get("NET_RATING") or 0), 1),
+        pace=round(float(row.get("PACE") or 0), 1),
+        ts_pct=round(float(row.get("TS_PCT") or 0) * 100, 1),
+    )
 
 
 def get_lineups(season: str, group_quantity: int, sort_by: str, limit: int) -> list[LineupEntry]:
     df = _fetch_lineups(season, group_quantity).copy()
     col, ascending = _LINEUP_SORT.get(sort_by, ("NET_RATING", False))
     df = df.sort_values(col, ascending=ascending).head(limit).reset_index(drop=True)
-    result = []
+    return [_row_to_lineup_entry(row) for _, row in df.iterrows()]
+
+
+def lookup_lineup(season: str, player_ids: list[int]) -> LineupEntry | None:
+    n = len(player_ids)
+    df = _fetch_lineups_raw(season, n)
+    # GROUP_ID format: "-id1-id2-" (player IDs wrapped in dashes)
+    target = {str(pid) for pid in player_ids}
     for _, row in df.iterrows():
-        fga = float(row["FGA"]) or 1
-        fg3a = float(row["FG3A"]) or 1
-        result.append(LineupEntry(
-            group_id=str(row["GROUP_ID"]),
-            group_name=str(row["GROUP_NAME"]),
-            team=str(row["TEAM_ABBREVIATION"]),
-            gp=int(row["GP"]),
-            min=round(float(row["MIN"]), 1),
-            pts=round(float(row["PTS"]), 1),
-            reb=round(float(row["REB"]), 1),
-            ast=round(float(row["AST"]), 1),
-            tov=round(float(row["TOV"]), 1),
-            fg_pct=round(float(row["FG_PCT"]) * 100, 1),
-            fg3_pct=round(float(row["FG3_PCT"]) * 100, 1),
-            off_rating=round(float(row["OFF_RATING"]), 1),
-            def_rating=round(float(row["DEF_RATING"]), 1),
-            net_rating=round(float(row["NET_RATING"]), 1),
-            pace=round(float(row["PACE"]), 1),
-            ts_pct=round(float(row["TS_PCT"]) * 100, 1),
-        ))
-    return result
+        parts = {p for p in str(row["GROUP_ID"]).split("-") if p}
+        if parts == target:
+            return _row_to_lineup_entry(row)
+    return None
 
 
 @cached()

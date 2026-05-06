@@ -147,6 +147,7 @@ class LineupEntry(BaseModel):
     tov: float
     fg_pct: float
     fg3_pct: float
+    plus_minus: float
     off_rating: float
     def_rating: float
     net_rating: float
