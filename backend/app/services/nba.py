@@ -1,4 +1,5 @@
 import numpy as np
+from nba_api.library.http import NBAStatsHTTP
 from nba_api.stats.static import players as static_players
 from nba_api.stats.endpoints import (
     shotchartdetail,
@@ -9,6 +10,19 @@ from nba_api.stats.endpoints import (
     commonplayerinfo,
 )
 from app.cache import cached
+
+NBAStatsHTTP.HEADERS = {
+    "Host": "stats.nba.com",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Referer": "https://www.nba.com/",
+    "Origin": "https://www.nba.com",
+    "Connection": "keep-alive",
+    "x-nba-stats-origin": "stats",
+    "x-nba-stats-token": "true",
+}
 from app.models.player import (
     PlayerSummary,
     PlayerBio,
