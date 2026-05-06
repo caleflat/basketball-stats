@@ -1,5 +1,5 @@
 import numpy as np
-from nba_api.library.http import NBAStatsHTTP
+from nba_api.stats.library.http import NBAStatsHTTP
 from nba_api.stats.static import players as static_players
 from nba_api.stats.endpoints import (
     shotchartdetail,
