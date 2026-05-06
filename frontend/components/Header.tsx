@@ -33,11 +33,19 @@ export function Header({ onSeasonChange, children }: Props) {
   const searchParams = useSearchParams();
   const season = searchParams.get("season") ?? "2025-26";
 
+  const seasonType = searchParams.get("season_type") ?? "regular";
+
   function handleChange(s: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("season", s);
     window.history.pushState(null, "", `${pathname}?${params.toString()}`);
     onSeasonChange?.(s);
+  }
+
+  function handleSeasonTypeChange(t: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("season_type", t);
+    window.history.pushState(null, "", `${pathname}?${params.toString()}`);
   }
 
   return (
@@ -77,8 +85,24 @@ export function Header({ onSeasonChange, children }: Props) {
       {/* Page-specific slot (e.g. search bar) */}
       {children && <div className="flex items-center flex-1">{children}</div>}
 
-      {/* Season selector — always far right */}
-      <div className="ml-auto flex items-center">
+      {/* Season type toggle */}
+      <div className="ml-auto flex items-center gap-3">
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          {[{ key: "regular", label: "Regular Season" }, { key: "playoffs", label: "Playoffs" }].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => handleSeasonTypeChange(key)}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                seasonType === key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+      {/* Season selector */}
+      <div className="flex items-center">
         <div className="relative flex items-center">
           <div className="absolute left-3 text-gray-400 flex items-center">
             <CalendarIcon />
@@ -96,6 +120,7 @@ export function Header({ onSeasonChange, children }: Props) {
             <ChevronDown />
           </div>
         </div>
+      </div>
       </div>
     </header>
   );

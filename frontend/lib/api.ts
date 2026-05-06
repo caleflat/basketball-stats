@@ -167,33 +167,33 @@ export const api = {
   getPlayerBio: (playerId: number) =>
     get<PlayerBio>(`/players/${playerId}/bio`),
 
-  getPlayerStats: (playerId: number, season: string) =>
-    get<PlayerSeasonStats>(`/players/${playerId}/stats?season=${season}`),
+  getPlayerStats: (playerId: number, season: string, seasonType = "regular") =>
+    get<PlayerSeasonStats>(`/players/${playerId}/stats?season=${season}&season_type=${seasonType}`),
 
-  getCareerStats: (playerId: number) =>
-    get<PlayerSeasonStats[]>(`/players/${playerId}/career`),
+  getCareerStats: (playerId: number, seasonType = "regular") =>
+    get<PlayerSeasonStats[]>(`/players/${playerId}/career?season_type=${seasonType}`),
 
-  getPlayerPercentiles: (playerId: number, season: string) =>
-    get<PlayerPercentiles>(`/players/${playerId}/percentiles?season=${season}`),
+  getPlayerPercentiles: (playerId: number, season: string, seasonType = "regular") =>
+    get<PlayerPercentiles>(`/players/${playerId}/percentiles?season=${season}&season_type=${seasonType}`),
 
-  getShotChart: (playerId: number, season: string) =>
-    get<ShotChartEntry[]>(`/players/${playerId}/shots?season=${season}`),
+  getShotChart: (playerId: number, season: string, seasonType = "regular") =>
+    get<ShotChartEntry[]>(`/players/${playerId}/shots?season=${season}&season_type=${seasonType}`),
 
-  getZones: (playerId: number, season: string) =>
-    get<ZoneStat[]>(`/players/${playerId}/zones?season=${season}`),
+  getZones: (playerId: number, season: string, seasonType = "regular") =>
+    get<ZoneStat[]>(`/players/${playerId}/zones?season=${season}&season_type=${seasonType}`),
 
-  getStatLeaders: (stat: string, season: string, limit = 25) =>
-    get<StatLeader[]>(`/leaders?stat=${stat}&season=${season}&limit=${limit}`),
+  getStatLeaders: (stat: string, season: string, seasonType = "regular", limit = 25) =>
+    get<StatLeader[]>(`/leaders?stat=${stat}&season=${season}&season_type=${seasonType}&limit=${limit}`),
 
-  getGameLog: (playerId: number, season: string) =>
-    get<GameLogEntry[]>(`/players/${playerId}/gamelog?season=${season}`),
+  getGameLog: (playerId: number, season: string, seasonType = "regular") =>
+    get<GameLogEntry[]>(`/players/${playerId}/gamelog?season=${season}&season_type=${seasonType}`),
 
   getPlayerAwards: (playerId: number) =>
     get<PlayerAward[]>(`/players/${playerId}/awards`),
 
-  getLineups: (groupQuantity: number, season: string, sortBy = "net_rating", limit = 25) =>
-    get<LineupEntry[]>(`/lineups?group_quantity=${groupQuantity}&season=${season}&sort_by=${sortBy}&limit=${limit}`),
+  getLineups: (groupQuantity: number, season: string, seasonType = "regular", sortBy = "net_rating", limit = 25) =>
+    get<LineupEntry[]>(`/lineups?group_quantity=${groupQuantity}&season=${season}&season_type=${seasonType}&sort_by=${sortBy}&limit=${limit}`),
 
-  lookupLineup: (playerIds: number[], season: string) =>
-    get<LineupEntry | null>(`/lineups/lookup?player_ids=${playerIds.join(",")}&season=${season}`),
+  lookupLineup: (playerIds: number[], season: string, seasonType = "regular") =>
+    get<LineupEntry | null>(`/lineups/lookup?player_ids=${playerIds.join(",")}&season=${season}&season_type=${seasonType}`),
 };

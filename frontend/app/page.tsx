@@ -7,6 +7,7 @@ import { PlayerSearch } from "@/components/PlayerSearch";
 import { ShotChart } from "@/components/ShotChart";
 import { PlayerBioCard } from "@/components/PlayerBioCard";
 import { PercentileRankings } from "@/components/PercentileRankings";
+import { PlayoffRun } from "@/components/PlayoffRun";
 import { GameLog } from "@/components/GameLog";
 import {
   api,
@@ -35,6 +36,7 @@ interface PlayerData {
 function HomeContent() {
   const searchParams = useSearchParams();
   const season = searchParams.get("season") ?? "2025-26";
+  const seasonType = searchParams.get("season_type") ?? "regular";
 
   const [player, setPlayer] = useState<PlayerSummary | null>(null);
   const [data, setData] = useState<PlayerData | null>(null);
@@ -49,28 +51,28 @@ function HomeContent() {
       .then((bio) => {
         const p = bioToSummary(bio);
         setPlayer(p);
-        loadData(p, season);
+        loadData(p, season, seasonType);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (player) loadData(player, season);
+    if (player) loadData(player, season, seasonType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [season]);
+  }, [season, seasonType]);
 
-  async function loadData(p: PlayerSummary, s: string) {
+  async function loadData(p: PlayerSummary, s: string, st: string) {
     setLoading(true);
     setError(null);
     setData(null);
     try {
       const [bio, career, percentiles, shots, gamelog, awardsRes] = await Promise.allSettled([
         api.getPlayerBio(p.id),
-        api.getCareerStats(p.id),
-        api.getPlayerPercentiles(p.id, s),
-        api.getShotChart(p.id, s),
-        api.getGameLog(p.id, s),
+        api.getCareerStats(p.id, st),
+        api.getPlayerPercentiles(p.id, s, st),
+        api.getShotChart(p.id, s, st),
+        api.getGameLog(p.id, s, st),
         api.getPlayerAwards(p.id),
       ]);
       setData({
@@ -97,7 +99,7 @@ function HomeContent() {
     const params = new URLSearchParams(searchParams.toString());
     params.set("player_id", String(p.id));
     window.history.replaceState(null, "", `/?${params.toString()}`);
-    loadData(p, season);
+    loadData(p, season, seasonType);
   }
 
   return (
@@ -134,7 +136,9 @@ function HomeContent() {
               </div>
 
               <div className="card">
-                {data.percentiles ? (
+                {seasonType === "playoffs" ? (
+                  <PlayoffRun gamelog={data.gamelog} playerName={data.bio.full_name} season={season} />
+                ) : data.percentiles ? (
                   <PercentileRankings data={data.percentiles} playerName={data.bio.full_name} />
                 ) : (
                   <p className="text-sm text-gray-400">No percentile data for {season}.</p>

@@ -150,17 +150,18 @@ const GROUPS = [
 function LeadersContent() {
   const searchParams = useSearchParams();
   const season = searchParams.get("season") ?? "2025-26";
+  const seasonType = searchParams.get("season_type") ?? "regular";
 
   const [stat, setStat] = useState("pts");
   const [leaders, setLeaders] = useState<StatLeader[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (s: string, ss: string) => {
+  const load = useCallback(async (s: string, ss: string, st: string) => {
     setLoading(true);
     setError(null);
     try {
-      setLeaders(await api.getStatLeaders(s, ss));
+      setLeaders(await api.getStatLeaders(s, ss, st));
     } catch {
       setError("Failed to load leaders — try again.");
     } finally {
@@ -168,7 +169,7 @@ function LeadersContent() {
     }
   }, []);
 
-  useEffect(() => { load(stat, season); }, [stat, season, load]);
+  useEffect(() => { load(stat, season, seasonType); }, [stat, season, seasonType, load]);
 
   const config = STATS.find((s) => s.key === stat)!;
 

@@ -202,7 +202,7 @@ function PlayerSearchInput({
   );
 }
 
-function BuildTab({ season }: { season: string }) {
+function BuildTab({ season, seasonType }: { season: string; seasonType: string }) {
   const [selected, setSelected] = useState<PlayerSummary[]>([]);
   const [result, setResult] = useState<LineupEntry | null | "not_found">(null);
   const [loading, setLoading] = useState(false);
@@ -224,7 +224,7 @@ function BuildTab({ season }: { season: string }) {
     setLoading(true);
     setResult(null);
     try {
-      const data = await api.lookupLineup(selected.map((p) => p.id), season);
+      const data = await api.lookupLineup(selected.map((p) => p.id), season, seasonType);
       setResult(data ?? "not_found");
     } catch {
       setResult("not_found");
@@ -277,6 +277,7 @@ function BuildTab({ season }: { season: string }) {
 function LineupsContent() {
   const searchParams = useSearchParams();
   const season = searchParams.get("season") ?? "2025-26";
+  const seasonType = searchParams.get("season_type") ?? "regular";
 
   const [mode, setMode] = useState<"browse" | "build">("browse");
   const [size, setSize] = useState(5);
@@ -285,11 +286,11 @@ function LineupsContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (sz: number, s: string, ss: string) => {
+  const load = useCallback(async (sz: number, s: string, st: string, ss: string) => {
     setLoading(true);
     setError(null);
     try {
-      setLineups(await api.getLineups(sz, ss, s));
+      setLineups(await api.getLineups(sz, ss, st, s));
     } catch {
       setError("Failed to load lineups — try again.");
     } finally {
@@ -298,8 +299,8 @@ function LineupsContent() {
   }, []);
 
   useEffect(() => {
-    if (mode === "browse") load(size, stat, season);
-  }, [size, stat, season, mode, load]);
+    if (mode === "browse") load(size, stat, seasonType, season);
+  }, [size, stat, season, seasonType, mode, load]);
 
   const config = STATS.find((s) => s.key === stat)!;
 
@@ -332,7 +333,7 @@ function LineupsContent() {
         </div>
 
         {mode === "build" ? (
-          <BuildTab season={season} />
+          <BuildTab season={season} seasonType={seasonType} />
         ) : (
           <>
             <div className="flex gap-2 mb-4">

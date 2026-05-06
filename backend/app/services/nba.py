@@ -98,8 +98,9 @@ def _row_to_season_stats(r) -> PlayerSeasonStats:
 
 @cached()
 def get_career_stats(player_id: int, season_type: str = "Regular Season") -> list[PlayerSeasonStats]:
-    response = playercareerstats.PlayerCareerStats(player_id=player_id, season_type_all_star=season_type)
-    df = response.get_data_frames()[0]
+    response = playercareerstats.PlayerCareerStats(player_id=player_id)
+    # 0 = regular season per-year, 2 = playoffs per-year
+    df = response.get_data_frames()[0 if season_type == "Regular Season" else 2]
     # Drop duplicate seasons (traded players have multiple rows per season; keep highest GP)
     df = df.sort_values("GP", ascending=False).drop_duplicates("SEASON_ID").sort_values("SEASON_ID", ascending=False)
     return [_row_to_season_stats(row) for _, row in df.iterrows()]
@@ -332,8 +333,8 @@ def _classify_zone(basic: str, area: str) -> str | None:
 
 
 @cached()
-def get_shot_zones(player_id: int, season: str) -> list[ZoneStat]:
-    shots = get_shot_chart(player_id, season)
+def get_shot_zones(player_id: int, season: str, season_type: str = "Regular Season") -> list[ZoneStat]:
+    shots = get_shot_chart(player_id, season, season_type)
     if not shots:
         return []
 
@@ -474,16 +475,16 @@ def _row_to_lineup_entry(row) -> LineupEntry:
     )
 
 
-def get_lineups(season: str, group_quantity: int, sort_by: str, limit: int) -> list[LineupEntry]:
-    df = _fetch_lineups(season, group_quantity).copy()
+def get_lineups(season: str, group_quantity: int, sort_by: str, limit: int, season_type: str = "Regular Season") -> list[LineupEntry]:
+    df = _fetch_lineups(season, group_quantity, season_type).copy()
     col, ascending = _LINEUP_SORT.get(sort_by, ("NET_RATING", False))
     df = df.sort_values(col, ascending=ascending).head(limit).reset_index(drop=True)
     return [_row_to_lineup_entry(row) for _, row in df.iterrows()]
 
 
-def lookup_lineup(season: str, player_ids: list[int]) -> LineupEntry | None:
+def lookup_lineup(season: str, player_ids: list[int], season_type: str = "Regular Season") -> LineupEntry | None:
     n = len(player_ids)
-    df = _fetch_lineups_raw(season, n)
+    df = _fetch_lineups_raw(season, n, season_type)
     # GROUP_ID format: "-id1-id2-" (player IDs wrapped in dashes)
     target = {str(pid) for pid in player_ids}
     for _, row in df.iterrows():
@@ -494,12 +495,12 @@ def lookup_lineup(season: str, player_ids: list[int]) -> LineupEntry | None:
 
 
 @cached()
-def get_shot_chart(player_id: int, season: str) -> list[ShotChartEntry]:
+def get_shot_chart(player_id: int, season: str, season_type: str = "Regular Season") -> list[ShotChartEntry]:
     response = shotchartdetail.ShotChartDetail(
         team_id=0,
         player_id=player_id,
         season_nullable=season,
-        season_type_all_star="Regular Season",
+        season_type_all_star=season_type,
         context_measure_simple="FGA",
     )
     df = response.get_data_frames()[0]
